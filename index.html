@@ -1,0 +1,75 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Doorman</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0b10;--fg:#e8eaf2;--mut:#8b90a3;--red:#ff4d5e;--amb:#ffb43a;--gry:#6b7080}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 500px at 50% -10%,#1b1f3a,transparent),var(--bg);color:var(--fg);font-family:Inter,system-ui,sans-serif}
+.wrap{max-width:1100px;margin:auto;padding:48px 20px}
+h1{font-size:clamp(34px,6vw,64px);line-height:1.05;margin:0 0 14px;font-weight:800;letter-spacing:-.03em}
+h1 span{background:linear-gradient(90deg,#ff4d5e,#ffb43a);-webkit-background-clip:text;color:transparent}
+.tag{color:var(--mut);letter-spacing:.2em;font-size:12px;text-transform:uppercase;margin-bottom:12px}
+.hero p{color:var(--mut);max-width:560px;line-height:1.6;margin:6px 0}
+.main{display:grid;grid-template-columns:1fr 340px 1fr;gap:28px;align-items:center;margin-top:40px}
+.phone{width:320px;height:620px;margin:auto;border-radius:44px;border:10px solid #1c1e2a;background:#05060a;box-shadow:0 30px 80px #000a,0 0 80px #ff4d5e22;position:relative;overflow:hidden;padding:46px 10px 10px}
+.phone:before{content:"";position:absolute;top:10px;left:50%;width:90px;height:22px;background:#1c1e2a;border-radius:20px;transform:translateX(-50%)}
+.clock{text-align:center;color:#555a6d;font-size:12px;margin:-24px 0 10px}
+#feed{display:flex;flex-direction:column;gap:8px;height:520px;overflow:hidden}
+.n{background:#14161f;border-radius:16px;padding:10px 12px;font-size:13px;animation:in .4s ease;border:1px solid #1f2230}
+.n.break{border-color:var(--red);box-shadow:0 0 24px #ff4d5e44}.n.drop{opacity:.45}
+@keyframes in{from{opacity:0;transform:translateY(-14px) scale(.96)}}
+.top{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;margin-bottom:3px}
+.chip{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;letter-spacing:.08em;animation:pop .5s .5s both}
+@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1}}
+.c-break{background:var(--red);color:#fff}.c-hold{background:var(--amb);color:#201400}.c-drop{background:#2a2d3a;color:#aaa}
+.why{font-size:11px;color:var(--mut);margin-top:4px;animation:pop .5s .7s both}
+.stats{display:grid;gap:14px}.stat{background:#12141c;border:1px solid #1f2230;border-radius:18px;padding:18px}
+.stat b{font-size:42px;display:block;letter-spacing:-.03em}.stat small{color:var(--mut)}
+button{background:var(--fg);color:#000;border:0;border-radius:99px;padding:12px 22px;font-weight:700;font-family:inherit;cursor:pointer;font-size:15px}
+.how{margin-top:70px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.how div{background:#12141c;border:1px solid #1f2230;border-radius:18px;padding:20px}
+.how h3{margin:0 0 6px}.how p{color:var(--mut);margin:0;font-size:14px;line-height:1.5}
+dialog{background:#12141c;color:var(--fg);border:1px solid #2a2d3a;border-radius:20px;max-width:420px;padding:24px}dialog::backdrop{background:#000a}
+li{margin:10px 0;line-height:1.5}
+@media(max-width:900px){.main{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.stat b{font-size:30px}.how{grid-template-columns:1fr}.phone{order:-1}}
+@media(max-width:520px){.stats{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+<div class="hero"><div class="tag">Do Not Disturb Hackathon x Phone Use</div>
+<h1>Your phone stays face-down.<br><span>Doorman</span> answers the door.</h1>
+<p>An AI doorman reads every incoming notification before it reaches you.</p>
+<p>Truly urgent ones break through. Everything else is held for a calm digest or dropped.</p>
+<p>Pick up your phone 3 times a day instead of 96.</p></div>
+<div class="main">
+<div class="stats"><div class="stat"><b id="s1">0</b><small>pickups avoided</small></div><div class="stat"><b id="s2">0</b><small>notifications held</small></div><div class="stat"><b id="s3">0</b><small>broke through</small></div></div>
+<div class="phone"><div class="clock">9:41 &middot; face-down mode</div><div id="feed"></div></div>
+<div><button onclick="dg()">Open Digest</button><p style="color:#8b90a3;font-size:14px;line-height:1.6">Held items wait for you. Look when you choose to, not when your phone decides.</p><button onclick="run()" style="background:#2a2d3a;color:#fff">Replay</button></div>
+</div>
+<div class="how"><div><h3>1. On-device classifier</h3><p>A tiny model scores every notification locally in milliseconds. Private, no cloud needed for the obvious ones.</p></div><div><h3>2. Your rules</h3><p>"Mom always breaks through." "Never Instagram." "2FA only if I just requested it." You set the doorman's policy.</p></div><div><h3>3. LLM for the ambiguous</h3><p>Unclear cases go to an LLM that reads context (calendar, recent actions) and explains its verdict in one line.</p></div></div>
+</div>
+<dialog id="d"><h2 style="margin-top:0">Your digest</h2><ul id="dl"></ul><button onclick="d.close()">Close</button></dialog>
+<script>
+const N=[
+["Instagram","amy_k and 41 others liked your photo","d","Engagement bait, no action needed"],
+["Slack","#eng-general: lunch poll","h","Non-urgent channel, batched"],
+["Mom","Missed call (1)","h","First call, could be routine"],
+["Uber Eats","50% off your next order!","d","Marketing promo"],
+["Mom","Calling again...","b","Two calls in 2 min from a favorite contact"],
+["Chase","Possible fraud: $1,240 at unknown merchant","b","Money at risk, needs action now"],
+["LinkedIn","12 people viewed your profile","d","Engagement bait"],
+["Group chat","Dave: anyone down for tacos Friday?","h","Social, can wait for digest"],
+["United","Gate change: B12 to C4, boarding 6:40pm","b","Your flight, in 3 hours"],
+["Slack","Priya: PR review when you can","h","Work, not blocking"],
+["Google","Your code is 482913","b","2FA you just requested"],
+["TikTok","You have 5 new videos for you","d","Engagement bait"],
+["Calendar","Standup tomorrow 10am","h","Reminder for later"],
+["Duolingo","Your streak is in danger!","d","Guilt-trip notification"],
+["Substack","3 new posts from writers you follow","h","Reading material, batched"]];
+const H=[];let t=[],picks=0;
+function run(){t.forEach(clearTimeout);t=[];feed.innerHTML="";H.length=0;s1.textContent=s2.textContent=s3.textContent=0;let a=0,h=0,b=0,dr=0;
+N.forEach((x,i)=>t.push(setTimeout(()=>{const k=x[2];const el=document.createElement("div");el.className="n "+(k=="b"?"break":k=="d"?"drop":"");
+el.innerHTML=`<div class="top"><span>${x[0]}</span><span>now</span></div>${x[1]}<br><span class="chip c-${k=="b"?"break":k=="h"?"hold":"drop"}">${k=="b"?"BREAK THROUGH":k=="h"?"HOLD":"DROP"}</span><div class="why">${x[3]}</div>`;
+feed.prepend(el);while(feed.children.length>5)feed.lastChild.remove();
+if(k=="b")s3.textContent=++b;if(k=="h"){H.push(x);s2.textContent=++h}if(k=="d")dr++;
+s1.textContent=h+dr;},i*1200+300)));t.push(setTimeout(run,N.length*1200+6000))}
+function dg(){const g={};H.forEach(x=>g[x[0]]=(g[x[0]]||0)+1);
+const w=H.filter(x=>["Slack","Calendar"].includes(x[0])).length,s=H.filter(x=>["Mom","Group chat","Substack"].includes(x[0])).length;
+dl.innerHTML=`<li><b>Work:</b> ${w||0} items, e.g. Priya wants a PR review, standup at 10am.</li><li><b>People:</b> Mom called once, Dave is proposing tacos Friday.</li><li><b>Reading:</b> 3 new Substack posts. Nothing needs you now.</li>`;d.showModal()}
+run();
+</script></body></html>
